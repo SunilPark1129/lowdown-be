@@ -13,10 +13,12 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const authenticate = (req, res, next) => {
   try {
     const tokenString = req.headers.authorization;
-    if (!tokenString) {
-      throw new Error("Can't take token");
-    }
     const token = tokenString.replace('Bearer ', '');
+    if (token === 'null') {
+      // user with no token
+      return;
+    }
+
     jwt.verify(token, SECRET_KEY, (error, payload) => {
       if (error) {
         return res
