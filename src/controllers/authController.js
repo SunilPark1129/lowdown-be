@@ -15,8 +15,9 @@ export const authenticate = (req, res, next) => {
     const tokenString = req.headers.authorization;
     const token = tokenString.replace('Bearer ', '');
     if (token === 'null') {
-      // user with no token
-      return;
+      return res
+        .status(402)
+        .json({ status: 'fail', message: 'no token found' });
     }
 
     jwt.verify(token, SECRET_KEY, (error, payload) => {
