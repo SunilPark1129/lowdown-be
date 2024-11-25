@@ -36,7 +36,8 @@ export const getFavoriteArticle = async (req, res) => {
     });
 
     if (!favorites) {
-      res.status(200).json({ status: 'success' });
+      favorites = new FavoriteArticle({ userId, articleList: [] });
+      await favorites.save();
     }
 
     res.status(200).json({ status: 'success', favorites });
