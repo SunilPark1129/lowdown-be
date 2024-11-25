@@ -35,7 +35,9 @@ export const getFavoriteArticle = async (req, res) => {
       model: 'Article',
     });
 
-    if (!favorites) throw new Error('Favorites not found');
+    if (!favorites) {
+      res.status(200).json({ status: 'success' });
+    }
 
     res.status(200).json({ status: 'success', favorites });
   } catch (err) {
