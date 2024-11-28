@@ -6,8 +6,8 @@ const articleController = {};
 articleController.getArticles = async (req, res) => {
   try {
     const { page, category } = req.query;
-    const condition = category ? { category } : {};
-    let query = Article.find(condition).sort({ createdAt: -1 });
+    const condition = category ? { category, title: { $ne: '[Removed]' } } : {};
+    let query = Article.find(condition);
     let response = { status: 'success' };
 
     if (page) {
@@ -18,6 +18,7 @@ articleController.getArticles = async (req, res) => {
     }
 
     const articleList = await query.exec();
+    console.log(articleList);
     response.articles = articleList;
     res.status(200).json(response);
   } catch (err) {
