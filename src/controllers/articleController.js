@@ -1,6 +1,6 @@
 import Article from '../models/Article.js';
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 20;
 const articleController = {};
 
 articleController.getArticles = async (req, res) => {
