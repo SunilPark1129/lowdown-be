@@ -7,7 +7,9 @@ articleController.getArticles = async (req, res) => {
   try {
     const { page, category, searchTitle } = req.query;
     const condition = category ? { category } : {};
-    if (searchTitle) condition.title = { $regex: searchTitle, $options: 'i' };
+    if (searchTitle) {
+      condition.title = { $regex: searchTitle, $options: 'i' };
+    }
     let query = Article.find(condition).sort({ publishedAt: -1 });
     let response = { status: 'success' };
 
