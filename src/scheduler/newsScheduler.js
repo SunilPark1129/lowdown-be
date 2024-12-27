@@ -5,6 +5,13 @@ import { NEWS_DOMAINS } from '../utils/domains.js';
 dotenv.config();
 
 const API_KEY = process.env.NEWS_API_KEY;
+const URL = 'https://newsapi.org/v2/everything';
+
+const getISODate = (daysAgo = 0) => {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString();
+};
 
 export const newsScheduler = async () => {
   const categoryList = [
@@ -16,56 +23,59 @@ export const newsScheduler = async () => {
     'sports',
     'technology',
   ];
-  const URL = 'https://newsapi.org/v2/everything';
+  const from = getISODate(2);
+  const to = getISODate();
 
-  let fromDateObj = new Date();
-  fromDateObj.setDate(fromDateObj.getDate() - 2);
-  let from = fromDateObj.toISOString();
+  try {
+    const articleCount = await Article.countDocuments();
+    if (articleCount > 1000) return;
 
-  let to = new Date().toISOString();
+    await Promise.all(
+      categoryList.map(async (category) => {
+        const existingArticles = await Article.find(
+          { category },
+          { title: 1, _id: 0 }
+        );
+        const existingTitlesSet = new Set(
+          existingArticles.map((article) => article.title.toLowerCase())
+        );
 
-  const articleCount = await Article.countDocuments();
+        const response = await axios.get(URL, {
+          params: {
+            apiKey: API_KEY,
+            q: category,
+            domains: NEWS_DOMAINS,
+            from,
+            to,
+            sortBy: 'relevancy',
+          },
+        });
 
-  if (articleCount > 1000) return;
+        const filteredArticles = response.data.articles.filter(
+          (article) => !existingTitlesSet.has(article.title.toLowerCase())
+        );
 
-  for (let i = 0; i < categoryList.length; i++) {
-    const category = categoryList[i];
-
-    const existingArticles = await Article.find({});
-
-    const response = await axios.get(URL, {
-      params: {
-        apiKey: API_KEY,
-        q: category,
-        domains: NEWS_DOMAINS,
-        from,
-        to,
-        sortBy: 'relevancy',
-      },
-    });
-
-    const filterArticles = response.data.articles.filter((article) => {
-      for (let i = 0; i < existingArticles.length; i++) {
-        if (article.title === existingArticles[i].title) return false;
-      }
-      return true;
-    });
-
-    await Article.insertMany(
-      filterArticles.map((article) => {
-        return {
-          source: article.source,
-          title: article.title,
-          content: article.content,
-          summary: article.description,
-          deleteFlag: true,
-          publishedAt: article.publishedAt,
-          category: category,
-          url: article.url,
-          urlToImage: article.urlToImage,
-          comments: [],
-        };
+        if (filteredArticles.length > 0) {
+          await Article.insertMany(
+            filteredArticles.map((article) => ({
+              source: article.source,
+              title: article.title,
+              content: article.content,
+              summary: article.description,
+              deleteFlag: true,
+              publishedAt: article.publishedAt,
+              category,
+              url: article.url,
+              urlToImage: article.urlToImage,
+              comments: [],
+            }))
+          );
+        }
       })
     );
+
+    console.log('News scheduling completed successfully.');
+  } catch (error) {
+    console.error('Error during news scheduling:', error);
   }
 };
