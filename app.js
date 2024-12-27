@@ -36,15 +36,16 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-cron.schedule('0 */5 * * *', () => {
+cron.schedule('0 */5 * * *', async () => {
   // every minute: '* * * * *'
   // every 5 hours: '0 */5 * * *'
   console.log('Every five hours');
-  newsScheduler();
-});
-
-cron.schedule('0 */4 * * *', () => {
-  // every minute: '* * * * *'
-  console.log('Every four hours');
+  await newsScheduler();
   cleanUpScheduler();
 });
+
+// cron.schedule('0 */4 * * *', () => {
+//   // every minute: '* * * * *'
+//   console.log('Every four hours');
+//   cleanUpScheduler();
+// });
