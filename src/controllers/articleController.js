@@ -5,24 +5,31 @@ const articleController = {};
 
 articleController.getArticles = async (req, res) => {
   try {
-    const { page, category, searchTitle } = req.query;
-    const condition = category ? { category } : {};
+    const { page = 1, category, searchTitle } = req.query;
+
+    const condition = {};
+    if (category) condition.category = category;
     if (searchTitle) {
       condition.title = { $regex: searchTitle, $options: 'i' };
     }
-    let query = Article.find(condition).sort({ publishedAt: -1 });
-    let response = { status: 'success' };
 
-    if (page) {
-      query.skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE);
-      const totalArticleNum = await Article.find(condition).countDocuments();
-      const totalPageNum = Math.ceil(totalArticleNum / PAGE_SIZE);
-      response.totalPageNum = totalPageNum;
-    }
+    const skip = (page - 1) * PAGE_SIZE;
 
-    const articleList = await query.exec();
-    response.articles = articleList;
-    res.status(200).json(response);
+    const [articles, totalArticleNum] = await Promise.all([
+      Article.find(condition)
+        .sort({ publishedAt: -1 })
+        .skip(skip)
+        .limit(PAGE_SIZE)
+        .exec(),
+      Article.countDocuments(condition),
+    ]);
+
+    const totalPageNum = Math.ceil(totalArticleNum / PAGE_SIZE);
+    res.status(200).json({
+      status: 'success',
+      articles,
+      totalPageNum,
+    });
   } catch (err) {
     res.status(500).json({ status: 'Failed', error: err.message });
   }
