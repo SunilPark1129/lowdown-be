@@ -16,7 +16,7 @@ articleController.getArticles = async (req, res) => {
     const skip = (page - 1) * PAGE_SIZE;
 
     const [articles, totalArticleNum] = await Promise.all([
-      Article.find(condition)
+      Article.find({ ...condition, title: { $ne: '[Removed]' } })
         .sort({ publishedAt: -1 })
         .skip(skip)
         .limit(PAGE_SIZE)
@@ -25,6 +25,7 @@ articleController.getArticles = async (req, res) => {
     ]);
 
     const totalPageNum = Math.ceil(totalArticleNum / PAGE_SIZE);
+
     res.status(200).json({
       status: 'success',
       articles,
