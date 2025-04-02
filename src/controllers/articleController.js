@@ -13,10 +13,18 @@ articleController.getArticles = async (req, res) => {
       condition.title = { $regex: searchTitle, $options: 'i' };
     }
 
+    const finalCondition = {
+      $and: [
+        { title: { $ne: '[Removed]' } },
+        ...(condition.title ? [{ title: condition.title }] : []),
+        ...(condition.category ? [{ category: condition.category }] : []),
+      ],
+    };
+
     const skip = (page - 1) * PAGE_SIZE;
 
     const [articles, totalArticleNum] = await Promise.all([
-      Article.find({ ...condition, title: { $ne: '[Removed]' } })
+      Article.find(finalCondition)
         .sort({ publishedAt: -1 })
         .skip(skip)
         .limit(PAGE_SIZE)
